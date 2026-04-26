@@ -22,7 +22,7 @@
         </p>
         <div class="hero-actions">
             <a href="{{ url_for('register') }}" class="btn-hero">Create free account</a>
-            <a href="#" class="btn-hero">See how it works</a>
+            <a href="#" class="btn-hero" id="btn-how">See how it works</a>
         </div>
     </div>
     <div class="hero-visual">
@@ -95,4 +95,59 @@
     </div>
 </section>
 
+<div class="modal-overlay" id="how-modal" role="dialog" aria-modal="true">
+    <div class="modal-box">
+        <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+        <div class="modal-video-wrap">
+            <iframe
+                id="modal-iframe"
+                src=""
+                data-src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                allow="autoplay; encrypted-media"
+                allowfullscreen
+                frameborder="0">
+            </iframe>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    var trigger  = document.getElementById('btn-how');
+    var modal    = document.getElementById('how-modal');
+    var closeBtn = document.getElementById('modal-close');
+    var iframe   = document.getElementById('modal-iframe');
+    var src      = iframe.dataset.src;
+
+    function openModal() {
+        iframe.src = src;
+        modal.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        iframe.src = '';
+        modal.classList.remove('is-open');
+        document.body.style.overflow = '';
+    }
+
+    trigger.addEventListener('click', function (e) {
+        e.preventDefault();
+        openModal();
+    });
+
+    closeBtn.addEventListener('click', closeModal);
+
+    modal.addEventListener('click', function (e) {
+        if (e.target === modal) closeModal();
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && modal.classList.contains('is-open')) closeModal();
+    });
+})();
+</script>
 {% endblock %}
