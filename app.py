@@ -107,7 +107,48 @@ def logout():
 
 @app.route("/profile")
 def profile():
-    return render_template("profile.html")
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    user = {
+        "name": "Demo User",
+        "email": "demo@spendly.com",
+        "initials": "DU",
+        "member_since": "April 2025",
+    }
+
+    stats = {
+        "total_spent": "₹18,240",
+        "transaction_count": 12,
+        "top_category": "Food",
+    }
+
+    transactions = [
+        {"date": "28 Apr 2025", "description": "Swiggy Order",        "category": "Food",          "amount": "₹450"},
+        {"date": "27 Apr 2025", "description": "Ola Cab",              "category": "Transport",     "amount": "₹220"},
+        {"date": "25 Apr 2025", "description": "Electricity Bill",     "category": "Bills",         "amount": "₹1,840"},
+        {"date": "23 Apr 2025", "description": "Apollo Pharmacy",      "category": "Health",        "amount": "₹610"},
+        {"date": "21 Apr 2025", "description": "Netflix Subscription", "category": "Entertainment", "amount": "₹649"},
+        {"date": "19 Apr 2025", "description": "Zara T-shirt",         "category": "Shopping",      "amount": "₹1,299"},
+        {"date": "17 Apr 2025", "description": "Zomato Order",         "category": "Food",          "amount": "₹380"},
+    ]
+
+    categories = [
+        {"name": "Food",          "amount": "₹6,540", "pct": 36},
+        {"name": "Bills",         "amount": "₹4,200", "pct": 23},
+        {"name": "Transport",     "amount": "₹2,180", "pct": 12},
+        {"name": "Entertainment", "amount": "₹1,800", "pct": 10},
+        {"name": "Shopping",      "amount": "₹2,070", "pct": 11},
+        {"name": "Health",        "amount": "₹1,450", "pct": 8},
+    ]
+
+    return render_template(
+        "profile.html",
+        user=user,
+        stats=stats,
+        transactions=transactions,
+        categories=categories,
+    )
 
 
 @app.route("/expenses/add")
