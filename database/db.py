@@ -89,3 +89,62 @@ def create_user(name, email, password_hash):
     user_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
     conn.close()
     return user_id
+
+
+def get_user_by_id(user_id):
+    conn = get_db()
+    row = conn.execute(
+        "SELECT id, name, email, created_at FROM users WHERE id = ?", (user_id,)
+    ).fetchone()
+    conn.close()
+    return row
+
+
+def get_recent_expenses(user_id, limit=10):
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT id, title, amount, category, date FROM expenses "
+        "WHERE user_id = ? ORDER BY date DESC, id DESC LIMIT ?",
+        (user_id, limit),
+    ).fetchall()
+    conn.close()
+    return rows
+
+
+def get_category_breakdown(user_id):
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT category, SUM(amount) AS total FROM expenses "
+        "WHERE user_id = ? GROUP BY category ORDER BY total DESC",
+        (user_id,),
+    ).fetchall()
+    conn.close()
+    grand_total = sum(r["total"] for r in rows) or 1
+    return [
+        {
+            "name": r["category"],
+            "amount": f"₹{r['total']:,.0f}",
+            "pct": round(r["total"] / grand_total * 100),
+        }
+        for r in rows
+    ]
+
+
+def get_expense_stats(user_id):
+    conn = get_db()
+    row = conn.execute(
+        "SELECT COALESCE(SUM(amount), 0) AS total_spent, COUNT(*) AS transaction_count "
+        "FROM expenses WHERE user_id = ?",
+        (user_id,),
+    ).fetchone()
+    top = conn.execute(
+        "SELECT category FROM expenses WHERE user_id = ? "
+        "GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1",
+        (user_id,),
+    ).fetchone()
+    conn.close()
+    return {
+        "total_spent": row["total_spent"],
+        "transaction_count": row["transaction_count"],
+        "top_category": top["category"] if top else "—",
+    }
