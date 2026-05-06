@@ -51,4 +51,4 @@ No new dependencies.
 - [ ] The page displays a transaction history table with at least three hardcoded rows
 - [ ] The page displays a category breakdown section with at least three categories
 - [ ] The navbar shows the logged-in state (username + logout link)
-- [ ] No hex colour values appear in `profile.html` — only CSS variables
+- [ ] No hex colour values appear in `profile.html` — only CSS variablest
