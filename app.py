@@ -1,9 +1,14 @@
 import sqlite3
+from datetime import datetime
 
 from flask import Flask, render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from database.db import init_db, get_user_by_email, create_user
+from database.db import (
+    init_db, get_user_by_email, create_user,
+    get_user_by_id, get_recent_expenses,
+    get_expense_stats, get_category_breakdown,
+)
 
 app = Flask(__name__)
 app.secret_key = "spendly-dev-secret"
@@ -110,37 +115,38 @@ def profile():
     if not session.get("user_id"):
         return redirect(url_for("login"))
 
+    raw_user = get_user_by_id(session["user_id"])
+    name_parts = raw_user["name"].split()
+    initials = (name_parts[0][0] + (name_parts[-1][0] if len(name_parts) > 1 else "")).upper()
+    member_since = datetime.strptime(
+        raw_user["created_at"][:10], "%Y-%m-%d"
+    ).strftime("%B %Y")
     user = {
-        "name": "Demo User",
-        "email": "demo@spendly.com",
-        "initials": "DU",
-        "member_since": "April 2025",
+        "name": raw_user["name"],
+        "email": raw_user["email"],
+        "initials": initials,
+        "member_since": member_since,
     }
 
+    raw_stats = get_expense_stats(session["user_id"])
     stats = {
-        "total_spent": "₹18,240",
-        "transaction_count": 12,
-        "top_category": "Food",
+        "total_spent": f"₹{raw_stats['total_spent']:,.0f}",
+        "transaction_count": raw_stats["transaction_count"],
+        "top_category": raw_stats["top_category"],
     }
 
+    raw_txns = get_recent_expenses(session["user_id"], limit=10)
     transactions = [
-        {"date": "28 Apr 2025", "description": "Swiggy Order",        "category": "Food",          "amount": "₹450"},
-        {"date": "27 Apr 2025", "description": "Ola Cab",              "category": "Transport",     "amount": "₹220"},
-        {"date": "25 Apr 2025", "description": "Electricity Bill",     "category": "Bills",         "amount": "₹1,840"},
-        {"date": "23 Apr 2025", "description": "Apollo Pharmacy",      "category": "Health",        "amount": "₹610"},
-        {"date": "21 Apr 2025", "description": "Netflix Subscription", "category": "Entertainment", "amount": "₹649"},
-        {"date": "19 Apr 2025", "description": "Zara T-shirt",         "category": "Shopping",      "amount": "₹1,299"},
-        {"date": "17 Apr 2025", "description": "Zomato Order",         "category": "Food",          "amount": "₹380"},
+        {
+            "date": datetime.strptime(t["date"], "%Y-%m-%d").strftime("%d %b %Y"),
+            "description": t["title"],
+            "category": t["category"],
+            "amount": f"₹{t['amount']:,.0f}",
+        }
+        for t in raw_txns
     ]
 
-    categories = [
-        {"name": "Food",          "amount": "₹6,540", "pct": 36},
-        {"name": "Bills",         "amount": "₹4,200", "pct": 23},
-        {"name": "Transport",     "amount": "₹2,180", "pct": 12},
-        {"name": "Entertainment", "amount": "₹1,800", "pct": 10},
-        {"name": "Shopping",      "amount": "₹2,070", "pct": 11},
-        {"name": "Health",        "amount": "₹1,450", "pct": 8},
-    ]
+    categories = get_category_breakdown(session["user_id"])
 
     return render_template(
         "profile.html",
