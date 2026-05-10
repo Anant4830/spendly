@@ -229,10 +229,62 @@
 .cat-bar--health        { background: var(--cat-health);        }
 .cat-bar--other         { background: var(--cat-other);         }
 
+/* ── Filter bar ── */
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding: 1rem 1.25rem;
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+}
+
+.filter-presets { display: flex; flex-wrap: wrap; gap: 0.5rem; flex: 1; }
+
+.filter-preset {
+    display: inline-block;
+    padding: 0.4rem 0.9rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--ink-muted);
+    background: transparent;
+    text-decoration: none;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.filter-preset:hover,
+.filter-preset--active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+}
+
+.filter-preset--active { font-weight: 600; }
+
+.filter-form   { display: flex; align-items: center; }
+.filter-inputs { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+
+.filter-label-text {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--ink-muted);
+    white-space: nowrap;
+}
+
+.filter-date-input { width: auto; padding: 0.4rem 0.65rem; font-size: 0.875rem; }
+.filter-apply-btn  { padding: 0.4rem 1rem; font-size: 0.875rem; white-space: nowrap; }
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
     .profile-page  { padding: 0 1rem 3rem; }
     .profile-stats { grid-template-columns: 1fr; }
     .profile-hero-inner { flex-direction: column; align-items: flex-start; gap: 1rem; }
     .profile-section { padding: 1.25rem; }
+    .filter-bar    { flex-direction: column; align-items: flex-start; }
+    .filter-inputs { gap: 0.4rem; }
 }

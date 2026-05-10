@@ -21,18 +21,41 @@
     </div>
   </section>
 
+  <section class="filter-bar">
+    <div class="filter-presets">
+      {% for p in presets %}
+      <a class="filter-preset {% if filter_dates.active_preset == p.key %}filter-preset--active{% endif %}"
+         href="{{ url_for('profile') }}?from={{ p.from_date }}&to={{ p.to_date }}">
+        {{ p.label }}
+      </a>
+      {% endfor %}
+    </div>
+
+    <form class="filter-form" method="GET" action="{{ url_for('profile') }}">
+      <div class="filter-inputs">
+        <label class="filter-label-text" for="filter-from">From</label>
+        <input class="form-input filter-date-input" type="date" id="filter-from"
+               name="from" value="{{ filter_dates.from_date }}">
+        <label class="filter-label-text" for="filter-to">To</label>
+        <input class="form-input filter-date-input" type="date" id="filter-to"
+               name="to" value="{{ filter_dates.to_date }}">
+        <button type="submit" class="btn-primary filter-apply-btn">Apply</button>
+      </div>
+    </form>
+  </section>
+
   <div class="profile-body">
 
     <section class="profile-stats">
       <div class="stat-card">
         <span class="stat-label">Total Spent</span>
         <span class="stat-value">{{ stats.total_spent }}</span>
-        <span class="stat-sub">this month</span>
+        <span class="stat-sub">{{ filter_label }}</span>
       </div>
       <div class="stat-card">
         <span class="stat-label">Transactions</span>
         <span class="stat-value">{{ stats.transaction_count }}</span>
-        <span class="stat-sub">this month</span>
+        <span class="stat-sub">{{ filter_label }}</span>
       </div>
       <div class="stat-card">
         <span class="stat-label">Top Category</span>

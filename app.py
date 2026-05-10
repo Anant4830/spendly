@@ -1,7 +1,8 @@
+import calendar
 import sqlite3
-from datetime import datetime
+from datetime import date, datetime
 
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, abort, render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from database.db import (
@@ -110,10 +111,54 @@ def logout():
     return redirect(url_for("landing"))
 
 
+def _months_ago(ref, n):
+    total = ref.year * 12 + ref.month - 1 - n
+    y, m = divmod(total, 12)
+    m += 1
+    d = min(ref.day, calendar.monthrange(y, m)[1])
+    return date(y, m, d)
+
+
 @app.route("/profile")
 def profile():
     if not session.get("user_id"):
         return redirect(url_for("login"))
+
+    today = date.today()
+    presets = [
+        {"label": "This Month",    "key": "this_month",    "from_date": today.replace(day=1).isoformat(),       "to_date": today.isoformat()},
+        {"label": "Last 3 Months", "key": "last_3_months", "from_date": _months_ago(today, 3).isoformat(),      "to_date": today.isoformat()},
+        {"label": "Last 6 Months", "key": "last_6_months", "from_date": _months_ago(today, 6).isoformat(),      "to_date": today.isoformat()},
+        {"label": "This Year",     "key": "this_year",     "from_date": date(today.year, 1, 1).isoformat(),     "to_date": today.isoformat()},
+    ]
+
+    raw_from = request.args.get("from", "").strip()
+    raw_to   = request.args.get("to",   "").strip()
+
+    if raw_from and raw_to:
+        try:
+            datetime.strptime(raw_from, "%Y-%m-%d")
+            datetime.strptime(raw_to,   "%Y-%m-%d")
+        except ValueError:
+            abort(400)
+        from_date, to_date = raw_from, raw_to
+    else:
+        from_date = to_date = None
+
+    active_preset = next(
+        (p["key"] for p in presets if from_date == p["from_date"] and to_date == p["to_date"]),
+        None,
+    )
+
+    if from_date and to_date:
+        if active_preset:
+            filter_label = next(p["label"] for p in presets if p["key"] == active_preset)
+        else:
+            d_from = datetime.strptime(from_date, "%Y-%m-%d")
+            d_to   = datetime.strptime(to_date,   "%Y-%m-%d")
+            filter_label = f"{d_from.strftime('%d %b')} – {d_to.strftime('%d %b %Y')}"
+    else:
+        filter_label = "all time"
 
     raw_user = get_user_by_id(session["user_id"])
     name_parts = raw_user["name"].split()
@@ -128,14 +173,14 @@ def profile():
         "member_since": member_since,
     }
 
-    raw_stats = get_expense_stats(session["user_id"])
+    raw_stats = get_expense_stats(session["user_id"], from_date=from_date, to_date=to_date)
     stats = {
         "total_spent": f"₹{raw_stats['total_spent']:,.0f}",
         "transaction_count": raw_stats["transaction_count"],
         "top_category": raw_stats["top_category"],
     }
 
-    raw_txns = get_recent_expenses(session["user_id"], limit=10)
+    raw_txns = get_recent_expenses(session["user_id"], limit=10, from_date=from_date, to_date=to_date)
     transactions = [
         {
             "date": datetime.strptime(t["date"], "%Y-%m-%d").strftime("%d %b %Y"),
@@ -146,7 +191,7 @@ def profile():
         for t in raw_txns
     ]
 
-    categories = get_category_breakdown(session["user_id"])
+    categories = get_category_breakdown(session["user_id"], from_date=from_date, to_date=to_date)
 
     return render_template(
         "profile.html",
@@ -154,6 +199,9 @@ def profile():
         stats=stats,
         transactions=transactions,
         categories=categories,
+        presets=presets,
+        filter_dates={"from_date": from_date or "", "to_date": to_date or "", "active_preset": active_preset},
+        filter_label=filter_label,
     )
 
 
