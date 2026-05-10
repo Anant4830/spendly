@@ -477,6 +477,16 @@ a { color: inherit; text-decoration: none; }
 
 .auth-switch a:hover { text-decoration: underline; }
 
+.label-hint {
+    color: var(--ink-faint);
+    font-weight: 400;
+}
+
+.form-cancel {
+    text-align: center;
+    margin-top: 1rem;
+}
+
 /* ------------------------------------------------------------------ */
 /* Footer                                                              */
 /* ------------------------------------------------------------------ */

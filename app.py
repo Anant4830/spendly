@@ -1,4 +1,5 @@
 import calendar
+import os
 import sqlite3
 from datetime import date, datetime
 
@@ -9,10 +10,11 @@ from database.db import (
     init_db, get_user_by_email, create_user,
     get_user_by_id, get_recent_expenses,
     get_expense_stats, get_category_breakdown,
+    create_expense,
 )
 
 app = Flask(__name__)
-app.secret_key = "spendly-dev-secret"
+app.secret_key = os.environ.get("SECRET_KEY", "spendly-dev-secret")
 
 
 # ------------------------------------------------------------------ #
@@ -212,9 +214,57 @@ def analytics():
     return render_template("analytics.html")
 
 
-@app.route("/expenses/add")
+VALID_CATEGORIES = ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Other']
+
+
+@app.route("/expenses/add", methods=["GET", "POST"])
 def add_expense():
-    return "Add expense — coming in Step 7"
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    if request.method == "GET":
+        return render_template("add_expense.html", today=date.today().isoformat(),
+                               categories=VALID_CATEGORIES)
+
+    title    = request.form.get("title",    "").strip()
+    amount   = request.form.get("amount",   "").strip()
+    category = request.form.get("category", "").strip()
+    exp_date = request.form.get("date",     "").strip()
+    note     = request.form.get("note",     "").strip()
+
+    def rerender(error):
+        return render_template("add_expense.html", error=error,
+                               title=title, amount=amount,
+                               category=category, date=exp_date, note=note,
+                               today=date.today().isoformat(),
+                               categories=VALID_CATEGORIES)
+
+    if not title or not amount or not category or not exp_date:
+        return rerender("All required fields must be filled in.")
+
+    if len(title) > 200:
+        return rerender("Description must be 200 characters or fewer.")
+
+    if len(note) > 1000:
+        return rerender("Note must be 1000 characters or fewer.")
+
+    try:
+        amount_f = float(amount)
+        if amount_f <= 0:
+            raise ValueError
+    except ValueError:
+        return rerender("Amount must be a positive number.")
+
+    if category not in VALID_CATEGORIES:
+        abort(400)
+
+    try:
+        datetime.strptime(exp_date, "%Y-%m-%d")
+    except ValueError:
+        return rerender("Date is invalid. Please use YYYY-MM-DD format.")
+
+    create_expense(session["user_id"], title, amount_f, category, exp_date, note)
+    return redirect(url_for("profile"))
 
 
 @app.route("/expenses/<int:id>/edit")
@@ -229,4 +279,4 @@ def delete_expense(id):
 
 if __name__ == "__main__":
     init_db()
-    app.run(debug=True, port=5001)
+    app.run(debug=os.environ.get("FLASK_DEBUG", "0") == "1", port=5001)
