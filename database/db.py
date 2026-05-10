@@ -137,6 +137,18 @@ def get_category_breakdown(user_id, from_date=None, to_date=None):
     ]
 
 
+def create_expense(user_id, title, amount, category, date, note):
+    conn = get_db()
+    cursor = conn.execute(
+        "INSERT INTO expenses (user_id, title, amount, category, date, note) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (user_id, title, amount, category, date, note),
+    )
+    conn.commit()
+    conn.close()
+    return cursor.lastrowid
+
+
 def get_expense_stats(user_id, from_date=None, to_date=None):
     conn = get_db()
     date_clause = ""
