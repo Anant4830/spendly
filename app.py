@@ -10,7 +10,7 @@ from database.db import (
     init_db, get_user_by_email, create_user,
     get_user_by_id, get_recent_expenses,
     get_expense_stats, get_category_breakdown,
-    create_expense,
+    create_expense, get_expense_by_id, update_expense,
 )
 
 app = Flask(__name__)
@@ -185,6 +185,7 @@ def profile():
     raw_txns = get_recent_expenses(session["user_id"], limit=10, from_date=from_date, to_date=to_date)
     transactions = [
         {
+            "id": t["id"],
             "date": datetime.strptime(t["date"], "%Y-%m-%d").strftime("%d %b %Y"),
             "description": t["title"],
             "category": t["category"],
@@ -267,9 +268,59 @@ def add_expense():
     return redirect(url_for("profile"))
 
 
-@app.route("/expenses/<int:id>/edit")
+@app.route("/expenses/<int:id>/edit", methods=["GET", "POST"])
 def edit_expense(id):
-    return "Edit expense — coming in Step 8"
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    expense = get_expense_by_id(id, session["user_id"])
+    if expense is None:
+        abort(404)
+
+    if request.method == "GET":
+        return render_template("edit_expense.html",
+                               expense=expense,
+                               categories=VALID_CATEGORIES)
+
+    title    = request.form.get("title",    "").strip()
+    amount   = request.form.get("amount",   "").strip()
+    category = request.form.get("category", "").strip()
+    exp_date = request.form.get("date",     "").strip()
+    note     = request.form.get("note",     "").strip()
+
+    def rerender(error):
+        return render_template("edit_expense.html", error=error,
+                               expense=expense,
+                               title=title, amount=amount,
+                               category=category, date=exp_date, note=note,
+                               categories=VALID_CATEGORIES)
+
+    if not title or not amount or not category or not exp_date:
+        return rerender("All required fields must be filled in.")
+
+    if len(title) > 200:
+        return rerender("Description must be 200 characters or fewer.")
+
+    if len(note) > 1000:
+        return rerender("Note must be 1000 characters or fewer.")
+
+    try:
+        amount_f = float(amount)
+        if amount_f <= 0:
+            raise ValueError
+    except ValueError:
+        return rerender("Amount must be a positive number.")
+
+    if category not in VALID_CATEGORIES:
+        abort(400)
+
+    try:
+        datetime.strptime(exp_date, "%Y-%m-%d")
+    except ValueError:
+        return rerender("Date is invalid. Please use YYYY-MM-DD format.")
+
+    update_expense(id, session["user_id"], title, amount_f, category, exp_date, note or None)
+    return redirect(url_for("profile"))
 
 
 @app.route("/expenses/<int:id>/delete")
