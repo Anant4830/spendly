@@ -149,6 +149,27 @@ def create_expense(user_id, title, amount, category, date, note):
     return cursor.lastrowid
 
 
+def get_expense_by_id(expense_id, user_id):
+    conn = get_db()
+    row = conn.execute(
+        "SELECT * FROM expenses WHERE id = ? AND user_id = ?",
+        (expense_id, user_id),
+    ).fetchone()
+    conn.close()
+    return row
+
+
+def update_expense(expense_id, user_id, title, amount, category, date, note):
+    conn = get_db()
+    conn.execute(
+        "UPDATE expenses SET title=?, amount=?, category=?, date=?, note=? "
+        "WHERE id=? AND user_id=?",
+        (title, amount, category, date, note, expense_id, user_id),
+    )
+    conn.commit()
+    conn.close()
+
+
 def get_expense_stats(user_id, from_date=None, to_date=None):
     conn = get_db()
     date_clause = ""

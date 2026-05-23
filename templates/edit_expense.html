@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Expense — Spendly{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+    <div class="auth-container">
+        <div class="auth-header">
+            <h1 class="auth-title">Edit Expense</h1>
+            <p class="auth-subtitle">Update the details of your expense.</p>
+        </div>
+        <div class="auth-card">
+            {% if error %}
+            <div class="auth-error">{{ error }}</div>
+            {% endif %}
+            <form method="POST" action="{{ url_for('edit_expense', id=expense.id) }}">
+                <div class="form-group">
+                    <label for="title">Description</label>
+                    <input type="text" id="title" name="title"
+                           class="form-input" placeholder="e.g. Lunch at café"
+                           value="{{ title if title is defined and error else expense.title }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="amount">Amount (₹)</label>
+                    <input type="number" id="amount" name="amount"
+                           class="form-input" placeholder="0.00"
+                           value="{{ amount if amount is defined and error else expense.amount }}"
+                           step="0.01" min="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <select id="category" name="category" class="form-input" required>
+                        <option value="" disabled>Select a category</option>
+                        {% set current_category = category if category is defined and error else expense.category %}
+                        {% for cat in categories %}
+                        <option value="{{ cat }}" {% if current_category == cat %}selected{% endif %}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="date">Date</label>
+                    <input type="date" id="date" name="date"
+                           class="form-input"
+                           value="{{ date if date is defined and error else expense.date }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="note">Note <span class="label-hint">(optional)</span></label>
+                    <textarea id="note" name="note"
+                              class="form-input" placeholder="Any extra details…"
+                              rows="3">{{ note if note is defined and error else (expense.note or '') }}</textarea>
+                </div>
+                <button type="submit" class="btn-submit">Save Changes</button>
+            </form>
+            <div class="form-cancel">
+                <a href="{{ url_for('profile') }}" class="btn-ghost">Cancel</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
