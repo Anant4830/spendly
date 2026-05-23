@@ -288,3 +288,21 @@
     .filter-bar    { flex-direction: column; align-items: flex-start; }
     .filter-inputs { gap: 0.4rem; }
 }
+
+/* ── Delete button ── */
+.btn-delete {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--danger);
+    font-size: inherit;
+    padding: 0;
+    margin-left: 0.75rem;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.btn-delete:hover {
+    color: var(--danger);
+    opacity: 0.75;
+}
